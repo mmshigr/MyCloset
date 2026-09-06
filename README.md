@@ -1,2 +1,2 @@
-# My_Closet
-My Closet App's repository
+# MyCloset
+MyCloset App's repository
