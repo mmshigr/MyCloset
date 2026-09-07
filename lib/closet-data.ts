@@ -5,10 +5,13 @@ export type ClothingColor =
   | "ブラック"
   | "グレー"
   | "ネイビー"
-  | "ベージュ"
-  | "ブラウン"
   | "ブルー"
   | "グリーン"
+  | "ベージュ"
+  | "ブラウン"
+  | "イエロー"
+  | "マルチ"
+  | "その他"
 
 export type ItemStatus = "所有中" | "売却済み"
 
@@ -42,10 +45,13 @@ export const COLORS: ClothingColor[] = [
   "ブラック",
   "グレー",
   "ネイビー",
-  "ベージュ",
-  "ブラウン",
   "ブルー",
   "グリーン",
+  "ベージュ",
+  "ブラウン",
+  "イエロー",
+  "マルチ",
+  "その他",
 ]
 
 // Maps each wardrobe color name to a real swatch value for UI dots.
@@ -54,10 +60,13 @@ export const COLOR_SWATCH: Record<ClothingColor, string> = {
   ブラック: "oklch(0.22 0 0)",
   グレー: "oklch(0.72 0 0)",
   ネイビー: "oklch(0.35 0.06 260)",
+  ブルー: "oklch(0.3 0.06 240)",
+  グリーン: "oklch(0.35 0.06 120)",
   ベージュ: "oklch(0.86 0.03 80)",
   ブラウン: "oklch(0.5 0.07 55)",
-  ブルー: "oklch(0.6 0.12 250)",
-  グリーン: "oklch(0.58 0.09 150)",
+  イエロー: "oklch(0.8 0.15 90)",
+  マルチ: "oklch(0.7 0.05 0)",
+  その他: "oklch(0.55 0.02 0)",
 }
 
 export const BRANDS: string[] = [
@@ -232,6 +241,7 @@ export interface ProductLookupResult {
   description: string
   suggestedPrice: number
   image?: string
+  productUrl?: string
 }
 
 // Dummy "product catalog" keyed by BRAND + product number.

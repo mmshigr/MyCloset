@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
 import { ClosetProvider } from '@/components/closet-provider'
+import { AuthGuard } from '@/components/auth-guard'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -27,7 +28,9 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${geist.variable} bg-background`}>
       <body className="antialiased">
-        <ClosetProvider>{children}</ClosetProvider>
+       <AuthGuard>
+         <ClosetProvider>{children}</ClosetProvider>
+       </AuthGuard>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

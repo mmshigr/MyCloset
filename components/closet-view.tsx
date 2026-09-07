@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react"
 import { useCloset } from "@/components/closet-provider"
 import { ItemCard } from "@/components/item-card"
 import { ColorDot } from "@/components/color-dot"
-import { CATEGORIES, COLORS, BRANDS, type Category, type ClothingColor } from "@/lib/closet-data"
+import { CATEGORIES, COLORS, type Category, type ClothingColor } from "@/lib/closet-data"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = "所有中" | "売却済み"
@@ -20,6 +20,16 @@ export function ClosetView() {
   const [showFilters, setShowFilters] = useState(false)
 
   const activeCount = colors.length + brands.length + (status !== "所有中" ? 1 : 0)
+
+  const availableBrands = useMemo(() => {
+    return Array.from(
+      new Set(
+        items
+          .map((item) => item.brand.trim())
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b, "ja"))
+  }, [items])
 
   const filtered = useMemo(() => {
     return items.filter((item) => {
@@ -122,8 +132,13 @@ export function ClosetView() {
           </FilterGroup>
 
           <FilterGroup label="ブランド">
-            {BRANDS.map((b) => (
-              <Chip key={b} small active={brands.includes(b)} onClick={() => toggle(b, brands, setBrands)}>
+            {availableBrands.map((b) => (
+              <Chip
+                key={b}
+                small
+                active={brands.includes(b)}
+                onClick={() => toggle(b, brands, setBrands)}
+              >
                 {b}
               </Chip>
             ))}
