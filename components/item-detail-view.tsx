@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 
 import { useCloset } from "@/components/closet-provider"
+import { supabase } from "@/lib/supabase"
 import { ColorDot } from "@/components/color-dot"
 import { formatYen, formatDate, formatDateShort } from "@/lib/closet-data"
 
@@ -22,7 +23,14 @@ const today = () => new Date().toISOString().slice(0, 10)
 export function ItemDetailView({ id }: { id: string }) {
   const router = useRouter()
 
-  const { getItem, logWear, markSold, deleteItem } = useCloset()
+  const {
+    getItem,
+    logWear,
+    deleteWear,
+    markSold,
+    deleteItem,
+    updateItem,
+  } = useCloset()
 
   const item = getItem(id)
 
@@ -36,6 +44,35 @@ export function ItemDetailView({ id }: { id: string }) {
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editName, setEditName] = useState("")
+  const [editBrand, setEditBrand] = useState("")
+  const [editProductNumber, setEditProductNumber] = useState("")
+  const [editCategory, setEditCategory] = useState("")
+  const [editColor, setEditColor] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editPrice, setEditPrice] = useState("")
+  const [editPurchaseDate, setEditPurchaseDate] = useState("")
+  const [editProductUrl, setEditProductUrl] = useState("")
+  const [editLoading, setEditLoading] = useState(false)
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState("")
+  const editImageInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!item) return
+
+    setEditName(item.name)
+    setEditBrand(item.brand)
+    setEditProductNumber(item.productNumber ?? "")
+    setEditCategory(item.category)
+    setEditColor(item.color)
+    setEditDescription(item.description ?? "")
+    setEditPrice(String(item.purchasePrice))
+    setEditPurchaseDate(item.purchaseDate)
+    setEditProductUrl(item.productUrl ?? "")
+  }, [item])
 
   if (!item) {
     return (
@@ -90,6 +127,282 @@ export function ItemDetailView({ id }: { id: string }) {
           <ArrowLeft className="h-5 w-5" />
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setEditOpen(true)}
+        className="mx-5 mt-3 flex h-12 w-[calc(100%-2.5rem)] items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-medium text-foreground active:bg-secondary"
+      >
+        商品情報を編集
+      </button>
+
+        {editOpen && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+
+            try {
+              setEditLoading(true)
+            
+              let newImageUrl: string | undefined
+            
+              if (editImageFile) {
+                const fileExt =
+                  editImageFile.name.split(".").pop() || "jpg"
+            
+                const filePath = `items/${Date.now()}-${Math.random()
+                  .toString(36)
+                  .slice(2)}.${fileExt}`
+            
+                const { error: uploadError } = await supabase.storage
+                  .from("closet-images")
+                  .upload(filePath, editImageFile, {
+                    contentType: editImageFile.type,
+                    upsert: false,
+                  })
+            
+                if (uploadError) {
+                  throw uploadError
+                }
+            
+                const { data } = supabase.storage
+                  .from("closet-images")
+                  .getPublicUrl(filePath)
+            
+                newImageUrl = data.publicUrl
+              }
+            
+              await updateItem(item.id, {
+                name: editName.trim(),
+                brand: editBrand.trim(),
+                productNumber:
+                  editProductNumber.trim() || undefined,
+                image: newImageUrl ?? item.image,
+                category: editCategory as typeof item.category,
+                color: editColor as typeof item.color,
+                description:
+                  editDescription.trim() || undefined,
+                purchasePrice: Number(editPrice) || 0,
+                purchaseDate: editPurchaseDate,
+                productUrl:
+                  editProductUrl.trim() || undefined,
+              })
+
+              if (editImageFile && item.image) {
+                try {
+                  const imageUrl = new URL(item.image)
+                  const marker = "/storage/v1/object/public/closet-images/"
+              
+                  if (imageUrl.pathname.includes(marker)) {
+                    const filePath = decodeURIComponent(
+                      imageUrl.pathname.split(marker)[1],
+                    )
+              
+                    if (filePath) {
+                      const { error: deleteError } =
+                        await supabase.storage
+                          .from("closet-images")
+                          .remove([filePath])
+              
+                      if (deleteError) {
+                        console.error(
+                          "Failed to delete old image:",
+                          deleteError,
+                        )
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error(
+                    "Failed to process old image URL:",
+                    error,
+                  )
+                }
+              }
+
+              setEditOpen(false)
+            } catch (error) {
+              console.error("Failed to update item:", error)
+              window.alert("商品の更新に失敗しました")
+            } finally {
+              setEditLoading(false)
+            }
+          }}
+          className="mx-5 mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
+        >
+          <p className="text-base font-medium text-foreground">
+            商品情報を編集
+          </p>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              商品画像
+            </p>
+
+            <input
+              ref={editImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+
+                setEditImageFile(file)
+
+                const previewUrl = URL.createObjectURL(file)
+                setEditImagePreview(previewUrl)
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => editImageInputRef.current?.click()}
+              className="w-full rounded-lg border border-border px-4 py-3 text-sm font-medium"
+            >
+              画像を変更
+            </button>
+
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-secondary">
+              <Image
+                src={
+                  editImagePreview ||
+                  item.image ||
+                  "/placeholder.svg"
+                }
+                alt={item.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+
+          <Field label="ブランド">
+            <input
+              value={editBrand}
+              onChange={(e) => setEditBrand(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="商品番号">
+            <input
+              value={editProductNumber}
+              onChange={(e) =>
+                setEditProductNumber(e.target.value)
+              }
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="商品名">
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="カテゴリ">
+            <select
+              value={editCategory}
+              onChange={(e) => setEditCategory(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            >
+              <option value="トップス">トップス</option>
+              <option value="ボトムス">ボトムス</option>
+              <option value="アウター">アウター</option>
+              <option value="シューズ">シューズ</option>
+              <option value="アクセサリー">アクセサリー</option>
+            </select>
+          </Field>
+
+          <Field label="色">
+            <select
+              value={editColor}
+              onChange={(e) => setEditColor(e.target.value)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            >
+              <option value="ホワイト">ホワイト</option>
+              <option value="ブラック">ブラック</option>
+              <option value="グレー">グレー</option>
+              <option value="ネイビー">ネイビー</option>
+              <option value="ブルー">ブルー</option>
+              <option value="グリーン">グリーン</option>
+              <option value="ベージュ">ベージュ</option>
+              <option value="ブラウン">ブラウン</option>
+              <option value="イエロー">イエロー</option>
+              <option value="マルチ">マルチ</option>
+              <option value="その他">その他</option>
+            </select>
+          </Field>
+
+          <Field label="商品説明">
+            <textarea
+              value={editDescription}
+              onChange={(e) =>
+                setEditDescription(e.target.value)
+              }
+              rows={4}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="購入価格 (¥)">
+            <input
+              inputMode="numeric"
+              value={editPrice}
+              onChange={(e) =>
+                setEditPrice(
+                  e.target.value.replace(/[^0-9]/g, ""),
+                )
+              }
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="購入日">
+            <input
+              type="date"
+              value={editPurchaseDate}
+              onChange={(e) =>
+                setEditPurchaseDate(e.target.value)
+              }
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <Field label="商品ページURL">
+            <input
+              type="url"
+              value={editProductUrl}
+              onChange={(e) =>
+                setEditProductUrl(e.target.value)
+              }
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            />
+          </Field>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              disabled={editLoading}
+              className="h-10 flex-1 rounded-lg border border-border text-sm font-medium active:bg-secondary disabled:opacity-50"
+            >
+              キャンセル
+            </button>
+
+            <button
+              type="submit"
+              disabled={editLoading}
+              className="h-10 flex-1 rounded-lg bg-primary text-sm font-medium text-primary-foreground active:opacity-90 disabled:opacity-50"
+            >
+              {editLoading ? "保存中..." : "保存する"}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="px-5 pt-5">
         <div className="flex items-center justify-between">
@@ -288,7 +601,13 @@ export function ItemDetailView({ id }: { id: string }) {
             </p>
           ) : (
             <ul className="mt-3 space-y-0">
-              {item.wearHistory.map((w, i) => (
+              {[...item.wearHistory]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.date).getTime() -
+                      new Date(b.date).getTime(),
+                  )
+                  .map((w, i) => (
                 <li
                   key={w.id}
                   className="flex items-center gap-3 border-border py-3"
@@ -311,6 +630,24 @@ export function ItemDetailView({ id }: { id: string }) {
                       </p>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm("この着用履歴を削除しますか？")) {
+                        return
+                      }
+
+                      try {
+                        await deleteWear(item.id, w.id)
+                      } catch (error) {
+                        console.error("Failed to delete wear entry:", error)
+                        window.alert("着用履歴の削除に失敗しました")
+                      }
+                    }}
+                    className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground active:bg-secondary"
+                  >
+                    削除
+                  </button>
                 </li>
               ))}
             </ul>

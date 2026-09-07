@@ -19,7 +19,12 @@ interface ClosetContextValue {
   items: ClothingItem[]
   getItem: (id: string) => ClothingItem | undefined
   addItem: (item: Omit<ClothingItem, "id" | "wearHistory">) => Promise<string>
+  updateItem: (
+    id: string,
+    item: Partial<Omit<ClothingItem, "id" | "wearHistory">>,
+  ) => Promise<void>
   logWear: (id: string, entry: Omit<WearEntry, "id">) => Promise<void>
+  deleteWear: (itemId: string, wearId: string) => Promise<void>
   markSold: (id: string, saleDate: string, salePrice: number) => Promise<void>
   deleteItem: (id: string) => Promise<void>
 }
@@ -66,6 +71,7 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
         name: item.name,
         brand: item.brand ?? "",
         productNumber: item.product_code ?? undefined,
+        productUrl: item.product_url ?? undefined,
         description: item.description ?? undefined,
         category: item.category,
         color: item.color,
@@ -173,6 +179,35 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const deleteWear = useCallback(
+    async (itemId: string, wearId: string) => {
+      const { error } = await supabase
+        .from("wear_entries")
+        .delete()
+        .eq("id", Number(wearId))
+        .eq("item_id", Number(itemId))
+
+      if (error) {
+        console.error("Failed to delete wear entry:", error)
+        throw error
+      }
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                wearHistory: item.wearHistory.filter(
+                  (entry) => entry.id !== wearId,
+                ),
+              }
+            : item,
+        ),
+      )
+    },
+    [],
+  )
+
   const markSold = useCallback(
     async (id: string, saleDate: string, salePrice: number) => {
       const { error } = await supabase
@@ -197,6 +232,89 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
                 status: "売却済み",
                 saleDate,
                 salePrice,
+              }
+            : item,
+        ),
+      )
+    },
+    [],
+  )
+
+  const updateItem = useCallback(
+    async (
+      id: string,
+      updates: Partial<Omit<ClothingItem, "id" | "wearHistory">>,
+    ) => {
+      const dbUpdates: Record<string, unknown> = {}
+
+      if (updates.brand !== undefined) {
+        dbUpdates.brand = updates.brand
+      }
+
+      if (updates.productNumber !== undefined) {
+        dbUpdates.product_code = updates.productNumber || null
+      }
+
+      if (updates.name !== undefined) {
+        dbUpdates.name = updates.name
+      }
+
+      if (updates.category !== undefined) {
+        dbUpdates.category = updates.category
+      }
+
+      if (updates.color !== undefined) {
+        dbUpdates.color = updates.color
+      }
+
+      if (updates.image !== undefined) {
+        dbUpdates.image = updates.image || null
+      }
+
+      if (updates.purchasePrice !== undefined) {
+        dbUpdates.purchase_price = updates.purchasePrice
+      }
+
+      if (updates.purchaseDate !== undefined) {
+        dbUpdates.purchase_date = updates.purchaseDate
+      }
+
+      if (updates.salePrice !== undefined) {
+        dbUpdates.sale_price = updates.salePrice ?? null
+      }
+
+      if (updates.saleDate !== undefined) {
+        dbUpdates.sale_date = updates.saleDate ?? null
+      }
+
+      if (updates.status !== undefined) {
+        dbUpdates.status = updates.status
+      }
+
+      if (updates.productUrl !== undefined) {
+        dbUpdates.product_url = updates.productUrl || null
+      }
+
+      if (updates.description !== undefined) {
+        dbUpdates.description = updates.description || null
+      }
+
+      const { error } = await supabase
+        .from("items")
+        .update(dbUpdates)
+        .eq("id", Number(id))
+
+      if (error) {
+        console.error("Failed to update item:", error)
+        throw error
+      }
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                ...updates,
               }
             : item,
         ),
@@ -309,14 +427,16 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
   
   return (
     <ClosetContext.Provider
-      value={{
-        items,
-        getItem,
-        addItem,
-        logWear,
-        markSold,
-        deleteItem,
-      }}
+    value={{
+      items,
+      getItem,
+      addItem,
+      updateItem,
+      logWear,
+      deleteWear,
+      markSold,
+      deleteItem,
+    }}
     >
       {children}
     </ClosetContext.Provider>

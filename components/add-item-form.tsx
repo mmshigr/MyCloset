@@ -14,15 +14,6 @@ import {
 } from "@/lib/closet-data"
 import { cn } from "@/lib/utils"
 
-const PLACEHOLDER_IMAGES = [
-  "/items/oxford-shirt.png",
-  "/items/navy-sweater.png",
-  "/items/gray-hoodie.png",
-  "/items/black-trousers.png",
-  "/items/beige-coat.png",
-  "/items/white-sneakers.png",
-]
-
 type LookupState = "idle" | "loading" | "success" | "error"
 
 export function AddItemForm() {
@@ -38,7 +29,7 @@ export function AddItemForm() {
   const [color, setColor] = useState<ClothingColor>("ホワイト")
   const [price, setPrice] = useState("")
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [image, setImage] = useState(PLACEHOLDER_IMAGES[0])
+  const [image, setImage] = useState("")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState("")
 
@@ -252,67 +243,36 @@ export function AddItemForm() {
             写真を選択
           </p>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {PLACEHOLDER_IMAGES.map((src) => (
-              <button
-                key={src}
-                type="button"
-                onClick={() => setImage(src)}
-                className={cn(
-                  "relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-muted",
-                  image === src
-                    ? "border-foreground"
-                    : "border-transparent",
-                )}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src || "/placeholder.svg"}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-
-                {image === src && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-foreground/30">
-                    <Check className="h-5 w-5 text-background" />
-                  </span>
-                )}
-              </button>
-            ))}
-
-            <label className="relative flex h-20 w-20 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border border-dashed border-border text-muted-foreground">
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="選択した画像"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <>
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="text-[10px]">
-                    アップロード
-                  </span>
-                </>
-              )}
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-
-                  setImageFile(file)
-                  setImagePreview(
-                    URL.createObjectURL(file),
-                  )
-                  setImage("")
-                }}
+          <label className="relative flex h-40 w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-border text-muted-foreground">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="選択した画像"
+                className="h-full w-full object-cover"
               />
-            </label>
-          </div>
+            ) : (
+              <>
+                <ImageIcon className="h-7 w-7" />
+                <span className="text-sm">
+                  スマホから写真を選択
+                </span>
+              </>
+            )}
+
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+
+                setImageFile(file)
+                setImagePreview(URL.createObjectURL(file))
+                setImage("")
+              }}
+            />
+          </label>
         </div>
 
         <Field label="アイテム名">
