@@ -5,7 +5,14 @@ import { Search, SlidersHorizontal, X } from "lucide-react"
 import { useCloset } from "@/components/closet-provider"
 import { ItemCard } from "@/components/item-card"
 import { ColorDot } from "@/components/color-dot"
-import { CATEGORIES, COLORS, type Category, type ClothingColor } from "@/lib/closet-data"
+import {
+  CATEGORY_GROUPS,
+  CATEGORIES_BY_GROUP,
+  COLORS,
+  type CategoryGroup,
+  type Category,
+  type ClothingColor,
+} from "@/lib/closet-data"
 import { cn } from "@/lib/utils"
 
 type StatusFilter = "所有中" | "売却済み"
@@ -13,6 +20,7 @@ type StatusFilter = "所有中" | "売却済み"
 export function ClosetView() {
   const { items } = useCloset()
   const [query, setQuery] = useState("")
+  const [categoryGroup, setCategoryGroup] = useState<CategoryGroup | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
   const [colors, setColors] = useState<ClothingColor[]>([])
   const [brands, setBrands] = useState<string[]>([])
@@ -35,6 +43,7 @@ export function ClosetView() {
     return items.filter((item) => {
       if (query && !`${item.name} ${item.brand}`.toLowerCase().includes(query.toLowerCase()))
         return false
+      if (categoryGroup && item.categoryGroup !== categoryGroup) return false
       if (category && item.category !== category) return false
       if (colors.length && !colors.includes(item.color)) return false
       if (brands.length && !brands.includes(item.brand)) return false
@@ -42,7 +51,7 @@ export function ClosetView() {
       if (item.status !== status) return false
       return true
     })
-  }, [items, query, category, colors, brands, status])
+  }, [items, query, categoryGroup, category, colors, brands, status])
 
   function toggle<T>(value: T, list: T[], setList: (v: T[]) => void) {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value])
@@ -101,15 +110,59 @@ export function ClosetView() {
         </div>
 
         <div className="mt-3 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <Chip active={category === null} onClick={() => setCategory(null)}>
-            すべて
+          <Chip
+            active={categoryGroup === null}
+            onClick={() => {
+              setCategoryGroup(null)
+              setCategory(null)
+            }}
+          >
+            ALL
           </Chip>
-          {CATEGORIES.map((c) => (
-            <Chip key={c} active={category === c} onClick={() => setCategory(category === c ? null : c)}>
-              {c}
+
+          {CATEGORY_GROUPS.map((group) => (
+            <Chip
+              key={group}
+              active={categoryGroup === group}
+              onClick={() => {
+                if (categoryGroup === group) {
+                  setCategoryGroup(null)
+                  setCategory(null)
+                } else {
+                  setCategoryGroup(group)
+                  setCategory(null)
+                }
+              }}
+            >
+              {group}
             </Chip>
           ))}
         </div>
+
+        {categoryGroup && (
+          <div className="mt-2 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Chip
+              active={category === null}
+              onClick={() => setCategory(null)}
+              small
+            >
+              ALL {categoryGroup}
+            </Chip>
+
+            {CATEGORIES_BY_GROUP[categoryGroup].map((c) => (
+              <Chip
+                key={c}
+                small
+                active={category === c}
+                onClick={() =>
+                  setCategory(category === c ? null : c)
+                }
+              >
+                {c}
+              </Chip>
+            ))}
+          </div>
+        )}
       </header>
 
       {showFilters && (

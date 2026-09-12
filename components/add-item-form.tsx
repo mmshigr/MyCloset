@@ -7,8 +7,10 @@ import { useCloset } from "@/components/closet-provider"
 import { ColorDot } from "@/components/color-dot"
 import { supabase } from "@/lib/supabase"
 import {
-  CATEGORIES,
+  CATEGORY_GROUPS,
+  CATEGORIES_BY_GROUP,
   COLORS,
+  type CategoryGroup,
   type Category,
   type ClothingColor,
 } from "@/lib/closet-data"
@@ -25,7 +27,8 @@ export function AddItemForm() {
   const [productNumber, setProductNumber] = useState("")
   const [description, setDescription] = useState("")
   const [productUrl, setProductUrl] = useState("")
-  const [category, setCategory] = useState<Category>("トップス")
+  const [categoryGroup, setCategoryGroup] = useState<CategoryGroup>("TOPS")
+  const [category, setCategory] = useState<Category>("S/S T-Shirts")
   const [color, setColor] = useState<ClothingColor>("ホワイト")
   const [price, setPrice] = useState("")
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
@@ -66,6 +69,7 @@ export function AddItemForm() {
       const result = await response.json()
 
       setName(result.name)
+      setCategoryGroup(result.categoryGroup)
       setCategory(result.category)
       setColor(result.color)
       setDescription(result.description)
@@ -133,6 +137,7 @@ export function AddItemForm() {
         productNumber: productNumber.trim() || undefined,
         description: description.trim() || undefined,
         productUrl: productUrl.trim() || undefined,
+        categoryGroup,
         category,
         color,
         image: imageUrl,
@@ -305,9 +310,26 @@ export function AddItemForm() {
           />
         </Field>
 
-        <Field label="カテゴリ">
+        <Field label="Category Group">
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
+            {CATEGORY_GROUPS.map((group) => (
+              <Selectable
+                key={group}
+                active={categoryGroup === group}
+                onClick={() => {
+                  setCategoryGroup(group)
+                  setCategory(CATEGORIES_BY_GROUP[group][0])
+                }}
+              >
+                {group}
+              </Selectable>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Category">
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES_BY_GROUP[categoryGroup].map((c) => (
               <Selectable
                 key={c}
                 active={category === c}

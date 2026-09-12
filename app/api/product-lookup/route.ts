@@ -141,8 +141,29 @@ ${sources}
 13. productUrlには、商品情報の根拠として最も適切なページのURLを入れてください。
 14. imageは検索結果に画像URLが明確に存在する場合だけ設定してください。分からない場合は空文字にしてください。
 
-categoryは必ず次のいずれか:
-トップス / ボトムス / アウター / シューズ / アクセサリー
+categoryGroupは必ず次のいずれか:
+
+TOPS / BOTTOMS / OUTERWEAR / SHOES / BAGS / ACCESSORIES
+
+categoryはcategoryGroupに対応する次のいずれか:
+
+TOPS:
+S/S T-Shirts / L/S T-Shirts / S/S Shirts / L/S Shirts / Knitwear / Sweatshirts / Hoodies / Polos / Tank Tops
+
+BOTTOMS:
+Denim / Trousers / Chinos / Cargo Pants / Shorts / Other Pants
+
+OUTERWEAR:
+Tailored Jackets / Blousons / Coats / Down & Insulated / Vests / Other Outerwear
+
+SHOES:
+Sneakers / Leather Shoes / Boots / Sandals / Other Shoes
+
+BAGS:
+Tote Bags / Shoulder Bags / Backpacks / Other Bags
+
+ACCESSORIES:
+Headwear / Belts / Necklaces / Bracelets / Rings / Other Accessories
 
 colorは必ず次のいずれか:
 ホワイト / ブラック / グレー / ネイビー / ブルー / グリーン / ベージュ / ブラウン / イエロー / マルチ / その他
@@ -155,7 +176,8 @@ name:
 としてください。
 
 その場合でもcategoryとcolorは推測せず、
-categoryは「トップス」、
+categoryGroupは「TOPS」、
+categoryは「S/S T-Shirts」、
 colorは「その他」、
 suggestedPriceは0、
 productUrlは空文字、
@@ -180,14 +202,56 @@ imageは空文字
             name: {
               type: "string",
             },
+            categoryGroup: {
+              type: "string",
+              enum: [
+                "TOPS",
+                "BOTTOMS",
+                "OUTERWEAR",
+                "SHOES",
+                "BAGS",
+                "ACCESSORIES",
+              ],
+            },
             category: {
               type: "string",
               enum: [
-                "トップス",
-                "ボトムス",
-                "アウター",
-                "シューズ",
-                "アクセサリー",
+                "S/S T-Shirts",
+                "L/S T-Shirts",
+                "S/S Shirts",
+                "L/S Shirts",
+                "Knitwear",
+                "Sweatshirts",
+                "Hoodies",
+                "Polos",
+                "Tank Tops",
+                "Denim",
+                "Trousers",
+                "Chinos",
+                "Cargo Pants",
+                "Shorts",
+                "Other Pants",
+                "Tailored Jackets",
+                "Blousons",
+                "Coats",
+                "Down & Insulated",
+                "Vests",
+                "Other Outerwear",
+                "Sneakers",
+                "Leather Shoes",
+                "Boots",
+                "Sandals",
+                "Other Shoes",
+                "Tote Bags",
+                "Shoulder Bags",
+                "Backpacks",
+                "Other Bags",
+                "Headwear",
+                "Belts",
+                "Necklaces",
+                "Bracelets",
+                "Rings",
+                "Other Accessories",
               ],
             },
             color: {
@@ -221,6 +285,7 @@ imageは空文字
           },
           required: [
             "name",
+            "categoryGroup",
             "category",
             "color",
             "description",

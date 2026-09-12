@@ -73,7 +73,8 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
         productNumber: item.product_code ?? undefined,
         productUrl: item.product_url ?? undefined,
         description: item.description ?? undefined,
-        category: item.category,
+        categoryGroup: item.category_group,
+        category: item.category_detail,
         color: item.color,
         image: item.image ?? "",
         purchasePrice: item.purchase_price ?? 0,
@@ -109,7 +110,8 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
           brand: item.brand,
           product_code: item.productNumber ?? null,
           name: item.name,
-          category: item.category,
+          category_group: item.categoryGroup,
+          category_detail: item.category,
           color: item.color,
           image: item.image,
           purchase_price: item.purchasePrice,
@@ -259,8 +261,12 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
         dbUpdates.name = updates.name
       }
 
+      if (updates.categoryGroup !== undefined) {
+        dbUpdates.category_group = updates.categoryGroup
+      }
+      
       if (updates.category !== undefined) {
-        dbUpdates.category = updates.category
+        dbUpdates.category_detail = updates.category
       }
 
       if (updates.color !== undefined) {

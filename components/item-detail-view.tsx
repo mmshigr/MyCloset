@@ -16,8 +16,15 @@ import {
 import { useCloset } from "@/components/closet-provider"
 import { supabase } from "@/lib/supabase"
 import { ColorDot } from "@/components/color-dot"
-import { formatYen, formatDate, formatDateShort } from "@/lib/closet-data"
-
+import {
+  CATEGORY_GROUPS,
+  CATEGORIES_BY_GROUP,
+  formatYen,
+  formatDate,
+  formatDateShort,
+  type CategoryGroup,
+  type Category,
+} from "@/lib/closet-data"
 const today = () => new Date().toISOString().slice(0, 10)
 
 export function ItemDetailView({ id }: { id: string }) {
@@ -49,7 +56,10 @@ export function ItemDetailView({ id }: { id: string }) {
   const [editName, setEditName] = useState("")
   const [editBrand, setEditBrand] = useState("")
   const [editProductNumber, setEditProductNumber] = useState("")
-  const [editCategory, setEditCategory] = useState("")
+  const [editCategoryGroup, setEditCategoryGroup] =
+  useState<CategoryGroup>("TOPS")
+  const [editCategory, setEditCategory] =
+  useState<Category>("S/S T-Shirts")
   const [editColor, setEditColor] = useState("")
   const [editDescription, setEditDescription] = useState("")
   const [editPrice, setEditPrice] = useState("")
@@ -66,6 +76,7 @@ export function ItemDetailView({ id }: { id: string }) {
     setEditName(item.name)
     setEditBrand(item.brand)
     setEditProductNumber(item.productNumber ?? "")
+    setEditCategoryGroup(item.categoryGroup)
     setEditCategory(item.category)
     setEditColor(item.color)
     setEditDescription(item.description ?? "")
@@ -178,7 +189,8 @@ export function ItemDetailView({ id }: { id: string }) {
                 productNumber:
                   editProductNumber.trim() || undefined,
                 image: newImageUrl ?? item.image,
-                category: editCategory as typeof item.category,
+                categoryGroup: editCategoryGroup,
+                category: editCategory,
                 color: editColor as typeof item.color,
                 description:
                   editDescription.trim() || undefined,
@@ -303,17 +315,35 @@ export function ItemDetailView({ id }: { id: string }) {
             />
           </Field>
 
-          <Field label="カテゴリ">
+          <Field label="Category Group">
             <select
-              value={editCategory}
-              onChange={(e) => setEditCategory(e.target.value)}
+              value={editCategoryGroup}
+              onChange={(e) => {
+                const group = e.target.value as CategoryGroup
+                setEditCategoryGroup(group)
+                setEditCategory(CATEGORIES_BY_GROUP[group][0])
+              }}
               className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
             >
-              <option value="トップス">トップス</option>
-              <option value="ボトムス">ボトムス</option>
-              <option value="アウター">アウター</option>
-              <option value="シューズ">シューズ</option>
-              <option value="アクセサリー">アクセサリー</option>
+              {CATEGORY_GROUPS.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Category">
+            <select
+              value={editCategory}
+              onChange={(e) => setEditCategory(e.target.value as Category)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+            >
+              {CATEGORIES_BY_GROUP[editCategoryGroup].map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </Field>
 
@@ -424,7 +454,11 @@ export function ItemDetailView({ id }: { id: string }) {
         </h1>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span className="rounded-full bg-secondary px-2.5 py-0.5">
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+            {item.categoryGroup}
+          </span>
+
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
             {item.category}
           </span>
 
